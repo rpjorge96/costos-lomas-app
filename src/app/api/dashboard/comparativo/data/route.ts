@@ -26,14 +26,23 @@ export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   // Accept comma-separated list OR "all" to query everything
   const unidadCostoParam = searchParams.get("unidadCosto") ?? "";
+  const destinosParam = searchParams.get("destinos") ?? "";
+  const tipoDestinoParam = searchParams.get("tipoDestino") ?? "";
   const periodId = searchParams.get("periodId");
-  const tipoDestino = searchParams.get("tipoDestino");
   const limit = parseInt(searchParams.get("limit") ?? "50");
 
-  // Parse the multi-value list
+  // Parse multi-value lists ("all" or "||"-separated)
   const selectedUnidades = unidadCostoParam === "all" || unidadCostoParam === ""
-    ? null   // null = no filter (all)
+    ? null
     : unidadCostoParam.split("||").map((s) => s.trim()).filter(Boolean);
+
+  const selectedDestinos = destinosParam === "all" || destinosParam === ""
+    ? null
+    : destinosParam.split("||").map((s) => s.trim()).filter(Boolean);
+
+  const selectedTipos = tipoDestinoParam === "all" || tipoDestinoParam === ""
+    ? null
+    : tipoDestinoParam.split("||").map((s) => s.trim()).filter(Boolean);
 
   if (selectedUnidades !== null && selectedUnidades.length === 0) {
     return NextResponse.json(
@@ -61,9 +70,15 @@ export async function GET(request: NextRequest) {
       paramIdx++;
     }
 
-    if (tipoDestino) {
-      whereExtra += ` AND d.tipo = $${paramIdx}`;
-      params.push(tipoDestino);
+    if (selectedTipos !== null && selectedTipos.length > 0) {
+      whereExtra += ` AND d.tipo = ANY($${paramIdx}::text[])`;
+      params.push(selectedTipos);
+      paramIdx++;
+    }
+
+    if (selectedDestinos !== null && selectedDestinos.length > 0) {
+      whereExtra += ` AND a.destino_subdestinos = ANY($${paramIdx}::text[])`;
+      params.push(selectedDestinos);
       paramIdx++;
     }
 

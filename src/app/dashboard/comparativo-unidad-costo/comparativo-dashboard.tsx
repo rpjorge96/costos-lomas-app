@@ -30,6 +30,7 @@ interface Filters {
   unidadesCosto: FilterOption[];
   periodos: Period[];
   tiposDestino: FilterOption[];
+  destinos: FilterOption[];
 }
 interface ComparativoRow {
   destino: string;
@@ -272,35 +273,58 @@ export function ComparativoDashboard() {
   // Filter state — empty array = "all"
   const [selectedUnidades, setSelectedUnidades] = useState<string[]>([]);
   const [periodId, setPeriodId] = useState("");
-  const [tipoDestino, setTipoDestino] = useState("");
+  const [selectedTipos, setSelectedTipos] = useState<string[]>([]);
+  const [selectedDestinos, setSelectedDestinos] = useState<string[]>([]);
   const [limit, setLimit] = useState(30);
 
   // Viz state
   const [sortBy, setSortBy] = useState<"costoTotal" | "costoMod" | "costoMoi" | "costoMateriales" | "costoMaquinaria" | "cantidadActividades">("costoTotal");
   const [activeTab, setActiveTab] = useState<"barras" | "apiladas" | "ranking" | "boxplot" | "dispersion">("barras");
 
-  // Fetch filters on mount
+  // Track whether the initial filter load has completed
+  const filtersInitialized = useRef(false);
+
+  // ── Initial filter load ──────────────────────────────────────────────────
   useEffect(() => {
     fetch("/api/dashboard/comparativo/filters")
       .then((r) => r.json())
-      .then((d) => {
+      .then((d: Filters) => {
         setFilters(d);
         // Default: "1 Cimientos" pre-selected
         if (d.unidadesCosto?.length > 0) {
-          const def = d.unidadesCosto.find((u: FilterOption) => u.value === "1 Cimientos");
+          const def = d.unidadesCosto.find((u) => u.value === "1 Cimientos");
           setSelectedUnidades(def ? [def.value] : [d.unidadesCosto[0].value]);
         }
+        filtersInitialized.current = true;
       });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Fetch data when filters change
+  // ── Dynamic filter refetch — runs when upstream selections change ─────────
+  // Cascade: period → unidades → tipos → destinos
+  useEffect(() => {
+    if (!filtersInitialized.current) return;
+    const unidadParam = selectedUnidades.length === 0 ? "all" : selectedUnidades.join("||");
+    const tipoParam = selectedTipos.length === 0 ? "all" : selectedTipos.join("||");
+    const params = new URLSearchParams({ unidadCosto: unidadParam, tipoDestino: tipoParam });
+    if (periodId) params.set("periodId", periodId);
+    fetch(`/api/dashboard/comparativo/filters?${params}`)
+      .then((r) => r.json())
+      .then((d: Filters) => setFilters(d));
+  }, [periodId, selectedUnidades, selectedTipos]);
+
+  // ── Fetch chart data ──────────────────────────────────────────────────────
   const fetchData = useCallback(async () => {
     setLoading(true);
-    // empty = all; use "||" as separator (safe separator for these strings)
     const unidadParam = selectedUnidades.length === 0 ? "all" : selectedUnidades.join("||");
-    const params = new URLSearchParams({ unidadCosto: unidadParam, limit: String(limit) });
+    const tipoParam = selectedTipos.length === 0 ? "all" : selectedTipos.join("||");
+    const destinosParam = selectedDestinos.length === 0 ? "all" : selectedDestinos.join("||");
+    const params = new URLSearchParams({
+      unidadCosto: unidadParam,
+      tipoDestino: tipoParam,
+      destinos: destinosParam,
+      limit: String(limit),
+    });
     if (periodId) params.set("periodId", periodId);
-    if (tipoDestino) params.set("tipoDestino", tipoDestino);
     try {
       const res = await fetch(`/api/dashboard/comparativo/data?${params}`);
       const d = await res.json();
@@ -308,7 +332,7 @@ export function ComparativoDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedUnidades, periodId, tipoDestino, limit]);
+  }, [selectedUnidades, selectedTipos, selectedDestinos, periodId, limit]);
 
   useEffect(() => {
     fetchData();
@@ -380,26 +404,23 @@ export function ComparativoDashboard() {
             </select>
           </div>
 
-          {/* Tipo Destino */}
+          {/* Tipo / Modelo — multi-select */}
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
               Tipo / Modelo
             </label>
-            <select
-              value={tipoDestino}
-              onChange={(e) => setTipoDestino(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-            >
-              <option value="">Todos</option>
-              {filters.tiposDestino.map((t) => (
-                <option key={t.value} value={t.value}>
-                  {t.value} ({t.count})
-                </option>
-              ))}
-            </select>
+            <MultiSelectDropdown
+              options={filters.tiposDestino}
+              selected={selectedTipos}
+              onChange={(next) => {
+                setSelectedTipos(next);
+                setSelectedDestinos([]); // reset destinos when tipo changes
+              }}
+              allLabel="Todos los tipos"
+            />
           </div>
 
-          {/* Limit */}
+          {/* Top N */}
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
               Top destinos
@@ -413,6 +434,19 @@ export function ComparativoDashboard() {
                 <option key={n} value={n}>Top {n}</option>
               ))}
             </select>
+          </div>
+
+          {/* Destinos — multi-select, full-width second row */}
+          <div className="sm:col-span-2 lg:col-span-5">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Destinos
+            </label>
+            <MultiSelectDropdown
+              options={filters.destinos ?? []}
+              selected={selectedDestinos}
+              onChange={setSelectedDestinos}
+              allLabel="Todos los destinos"
+            />
           </div>
         </div>
       </div>
