@@ -30,6 +30,13 @@ function Sidebar() {
           <span className="text-base">📊</span>
           <span className="truncate">Comparativo Unidad Costo</span>
         </Link>
+        <Link
+          href="/dashboard/costos-destino"
+          className="flex items-center gap-2.5 px-5 py-2.5 text-sm text-brand-100/90 hover:bg-brand-800 hover:text-white transition-colors"
+        >
+          <span className="text-base">🏠</span>
+          <span className="truncate">Costos por Destino</span>
+        </Link>
 
         <p className="px-5 py-2 mt-2 text-[10px] font-semibold uppercase tracking-widest text-brand-100/40">
           Tablas
