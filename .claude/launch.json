@@ -1,0 +1,37 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Next.js Dev (Costos Lomas)",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "port": 3000,
+      "cwd": "C:\\Users\\Jorge Ruano\\glm2-segunda-app"
+    },
+    {
+      "name": "Rails Server (GLM App)",
+      "runtimeExecutable": "bundle",
+      "runtimeArgs": ["exec", "rails", "server", "-p", "3007"],
+      "port": 3007
+    },
+    {
+      "name": "Drizzle Studio",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "db:studio"],
+      "port": 4983,
+      "cwd": "C:\\Users\\Jorge Ruano\\glm2-segunda-app"
+    },
+    {
+      "name": "Sidekiq Worker",
+      "runtimeExecutable": "bundle",
+      "runtimeArgs": ["exec", "sidekiq", "-q", "default"],
+      "port": 0
+    },
+    {
+      "name": "Tailwind CSS Watch (Rails)",
+      "runtimeExecutable": "bin/rails",
+      "runtimeArgs": ["tailwindcss:watch"],
+      "port": 0
+    }
+  ]
+}
