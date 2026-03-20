@@ -330,25 +330,42 @@ export function ComparativoDashboard() {
   if (!filters) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="text-gray-400">Cargando filtros...</div>
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-9 w-9 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+          <p className="text-sm text-gray-400">Cargando filtros…</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 p-6">
       {/* ── Header ── */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Comparativo por Unidad de Costo
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Compara una misma etapa constructiva entre diferentes destinos
-        </p>
+      <div className="flex items-start gap-4">
+        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 shadow-sm">
+          <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+            Comparativo por Unidad de Costo
+          </h1>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Compara una misma etapa constructiva entre diferentes destinos
+          </p>
+        </div>
       </div>
 
       {/* ── Filters ── */}
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
+          <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+          </svg>
+          <span className="text-xs font-bold uppercase tracking-wider text-gray-500">Filtros</span>
+        </div>
+        <div className="p-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {/* Unidad de Costo — multi-select */}
           <div className="lg:col-span-2">
@@ -415,11 +432,15 @@ export function ComparativoDashboard() {
             </select>
           </div>
         </div>
+        </div>
       </div>
 
       {loading && (
         <div className="flex h-40 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+            <p className="text-xs text-gray-400">Calculando comparativo…</p>
+          </div>
         </div>
       )}
 
@@ -427,46 +448,13 @@ export function ComparativoDashboard() {
         <>
           {/* ── KPI Cards ── */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
-            <KpiCard
-              label="Costo Total"
-              value={fmtQ(data.totals.costoTotal)}
-              color="bg-emerald-50 text-emerald-700"
-            />
-            <KpiCard
-              label="MOD"
-              value={fmtQ(data.totals.costoMod)}
-              sub={fmtPct(data.totals.costoTotal > 0 ? (data.totals.costoMod / data.totals.costoTotal) * 100 : 0)}
-              color="bg-blue-50 text-blue-700"
-            />
-            <KpiCard
-              label="MOI"
-              value={fmtQ(data.totals.costoMoi)}
-              sub={fmtPct(data.totals.costoTotal > 0 ? (data.totals.costoMoi / data.totals.costoTotal) * 100 : 0)}
-              color="bg-violet-50 text-violet-700"
-            />
-            <KpiCard
-              label="Materiales"
-              value={fmtQ(data.totals.costoMateriales)}
-              sub={fmtPct(data.totals.costoTotal > 0 ? (data.totals.costoMateriales / data.totals.costoTotal) * 100 : 0)}
-              color="bg-amber-50 text-amber-700"
-            />
-            <KpiCard
-              label="Maquinaria"
-              value={fmtQ(data.totals.costoMaquinaria)}
-              sub={fmtPct(data.totals.costoTotal > 0 ? (data.totals.costoMaquinaria / data.totals.costoTotal) * 100 : 0)}
-              color="bg-red-50 text-red-700"
-            />
-            <KpiCard
-              label="Actividades"
-              value={data.totals.cantidadActividades.toLocaleString()}
-              color="bg-purple-50 text-purple-700"
-            />
-            <KpiCard
-              label="Destinos"
-              value={data.count.toLocaleString()}
-              sub={`Med: ${fmtQ(data.boxplot.median)}`}
-              color="bg-cyan-50 text-cyan-700"
-            />
+            <KpiCard label="Costo Total" value={fmtQ(data.totals.costoTotal)} color="bg-emerald-50 text-emerald-700" accentColor="bg-emerald-400" />
+            <KpiCard label="MOD" value={fmtQ(data.totals.costoMod)} sub={fmtPct(data.totals.costoTotal > 0 ? (data.totals.costoMod / data.totals.costoTotal) * 100 : 0)} color="bg-blue-50 text-blue-700" accentColor="bg-blue-400" />
+            <KpiCard label="MOI" value={fmtQ(data.totals.costoMoi)} sub={fmtPct(data.totals.costoTotal > 0 ? (data.totals.costoMoi / data.totals.costoTotal) * 100 : 0)} color="bg-violet-50 text-violet-700" accentColor="bg-violet-400" />
+            <KpiCard label="Materiales" value={fmtQ(data.totals.costoMateriales)} sub={fmtPct(data.totals.costoTotal > 0 ? (data.totals.costoMateriales / data.totals.costoTotal) * 100 : 0)} color="bg-amber-50 text-amber-700" accentColor="bg-amber-400" />
+            <KpiCard label="Maquinaria" value={fmtQ(data.totals.costoMaquinaria)} sub={fmtPct(data.totals.costoTotal > 0 ? (data.totals.costoMaquinaria / data.totals.costoTotal) * 100 : 0)} color="bg-red-50 text-red-700" accentColor="bg-red-400" />
+            <KpiCard label="Actividades" value={data.totals.cantidadActividades.toLocaleString()} color="bg-purple-50 text-purple-700" accentColor="bg-purple-400" />
+            <KpiCard label="Destinos" value={data.count.toLocaleString()} sub={`Med: ${fmtQ(data.boxplot.median)}`} color="bg-cyan-50 text-cyan-700" accentColor="bg-cyan-400" />
           </div>
 
           {/* ── Tab Navigation ── */}
@@ -552,12 +540,15 @@ export function ComparativoDashboard() {
 }
 
 // ─── KPI Card ───
-function KpiCard({ label, value, sub, color }: { label: string; value: string; sub?: string; color: string }) {
+function KpiCard({ label, value, sub, color, accentColor }: { label: string; value: string; sub?: string; color: string; accentColor?: string }) {
   return (
-    <div className={`rounded-xl p-4 ${color}`}>
-      <p className="text-[10px] font-bold uppercase tracking-wider opacity-60">{label}</p>
-      <p className="mt-1 text-lg font-bold">{value}</p>
-      {sub && <p className="text-xs opacity-70">{sub}</p>}
+    <div className={`relative rounded-xl overflow-hidden ${color} shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5`}>
+      {accentColor && <div className={`h-1 w-full ${accentColor}`} />}
+      <div className="p-4">
+        <p className="text-[10px] font-bold uppercase tracking-widest opacity-50 leading-tight">{label}</p>
+        <p className="mt-2 text-xl font-extrabold leading-none tracking-tight">{value}</p>
+        {sub && <p className="mt-1.5 text-[11px] font-medium opacity-60 leading-tight">{sub}</p>}
+      </div>
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from "react";
 import type {
   DestinoFilters,
-  DestinoOption,
   FilterOption,
   FilterState,
   FilterAction,
@@ -49,13 +48,17 @@ function SearchableSelect({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:border-gray-400 focus:border-brand-500 focus:outline-none"
+        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none
+          ${value
+            ? "border-brand-400 bg-brand-50 text-brand-800 font-medium"
+            : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 focus:border-brand-500"
+          }`}
       >
         <span className="truncate text-left">
           {selected ? selected.label : placeholder}
         </span>
         <svg
-          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""} ${value ? "text-brand-500" : "text-gray-400"}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -110,7 +113,7 @@ function SearchableSelect({
   );
 }
 
-// ─── Multi-Select Dropdown (reused from comparativo pattern) ───
+// ─── Multi-Select Dropdown ───
 function MultiSelectDropdown({
   options,
   selected,
@@ -160,11 +163,15 @@ function MultiSelectDropdown({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 hover:border-gray-400 focus:border-brand-500 focus:outline-none"
+        className={`flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-sm transition-colors focus:outline-none
+          ${!isAll
+            ? "border-brand-400 bg-brand-50 text-brand-800 font-medium"
+            : "border-gray-300 bg-white text-gray-700 hover:border-gray-400 focus:border-brand-500"
+          }`}
       >
         <span className="truncate text-left">{label}</span>
         <svg
-          className={`h-4 w-4 shrink-0 text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""} ${!isAll ? "text-brand-500" : "text-gray-400"}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -246,7 +253,20 @@ interface FilterPanelProps {
 }
 
 export function FilterPanel({ filters, state, dispatch }: FilterPanelProps) {
-  // Filter destinos by tipo client-side
+  // Count active filters (excluding destino which is primary)
+  const activeCount = [
+    state.periodId,
+    state.tipoDestino,
+    state.subdestino,
+    state.fechaDesde,
+    state.fechaHasta,
+    state.soloConMod,
+    state.soloMaterialesPrincipales,
+    state.unidadCosto.length > 0,
+  ].filter(Boolean).length;
+
+  const hasAnyFilter = !!state.destino || activeCount > 0;
+
   const filteredDestinos = state.tipoDestino
     ? filters.destinos.filter((d) => d.tipo === state.tipoDestino)
     : filters.destinos;
@@ -258,155 +278,178 @@ export function FilterPanel({ filters, state, dispatch }: FilterPanelProps) {
   }));
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
-        {/* Destino — Primary selector */}
-        <div className="lg:col-span-2">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Destino
-          </label>
-          <SearchableSelect
-            options={destinoOptions}
-            value={state.destino}
-            onChange={(v) => dispatch({ type: "SET_DESTINO", value: v })}
-            placeholder="Seleccionar destino..."
-            renderOption={(o) => (
-              <div className="min-w-0">
-                <p className="truncate font-medium">{o.label}</p>
-                {o.sub && (
-                  <p className="truncate text-[11px] text-gray-400">{o.sub}</p>
-                )}
-              </div>
-            )}
-          />
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      {/* Panel header */}
+      <div className="flex items-center justify-between gap-4 px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
+          </svg>
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Filtros</span>
+          {activeCount > 0 && (
+            <span className="inline-flex items-center justify-center h-4 min-w-4 rounded-full bg-accent-500 px-1 text-[10px] font-bold text-white">
+              {activeCount}
+            </span>
+          )}
         </div>
-
-        {/* Período */}
-        <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Periodo
-          </label>
-          <select
-            value={state.periodId}
-            onChange={(e) =>
-              dispatch({ type: "SET_PERIOD", value: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
+        {hasAnyFilter && (
+          <button
+            type="button"
+            onClick={() => dispatch({ type: "RESET" })}
+            className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition-colors"
           >
-            <option value="">Todos</option>
-            {filters.periodos.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
-        </div>
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Limpiar filtros
+          </button>
+        )}
+      </div>
 
-        {/* Tipo Destino */}
-        <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Tipo / Modelo
-          </label>
-          <select
-            value={state.tipoDestino}
-            onChange={(e) =>
-              dispatch({ type: "SET_TIPO", value: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-          >
-            <option value="">Todos</option>
-            {filters.tiposDestino.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.value} ({t.count})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Subdestino */}
-        <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Subdestino
-          </label>
-          <select
-            value={state.subdestino}
-            onChange={(e) =>
-              dispatch({ type: "SET_SUBDESTINO", value: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-          >
-            <option value="">Todos</option>
-            {filters.subdestinos.map((s, idx) => (
-              <option key={`sub-${idx}`} value={s.value}>
-                {s.value} ({s.count})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Unidad de Costo — multi-select */}
-        <div className="lg:col-span-2">
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Unidad de Costo
-          </label>
-          <MultiSelectDropdown
-            options={filters.unidadesCosto}
-            selected={state.unidadCosto}
-            onChange={(v) => dispatch({ type: "SET_UC", value: v })}
-            allLabel="Todas las unidades"
-          />
-        </div>
-
-        {/* Fecha desde */}
-        <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Fecha desde
-          </label>
-          <input
-            type="date"
-            value={state.fechaDesde}
-            onChange={(e) =>
-              dispatch({ type: "SET_FECHA_DESDE", value: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-          />
-        </div>
-
-        {/* Fecha hasta */}
-        <div>
-          <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Fecha hasta
-          </label>
-          <input
-            type="date"
-            value={state.fechaHasta}
-            onChange={(e) =>
-              dispatch({ type: "SET_FECHA_HASTA", value: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none"
-          />
-        </div>
-
-        {/* Toggles */}
-        <div className="flex items-end gap-4 lg:col-span-2">
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={state.soloConMod}
-              onChange={() => dispatch({ type: "TOGGLE_MOD" })}
-              className="h-4 w-4 rounded border-gray-300 accent-brand-500"
+      {/* Filter grid */}
+      <div className="p-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          {/* Destino — Primary selector */}
+          <div className="lg:col-span-2">
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Destino
+            </label>
+            <SearchableSelect
+              options={destinoOptions}
+              value={state.destino}
+              onChange={(v) => dispatch({ type: "SET_DESTINO", value: v })}
+              placeholder="Seleccionar destino..."
+              renderOption={(o) => (
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{o.label}</p>
+                  {o.sub && (
+                    <p className="truncate text-[11px] text-gray-400">{o.sub}</p>
+                  )}
+                </div>
+              )}
             />
-            Solo con MOD
-          </label>
-          <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={state.soloMaterialesPrincipales}
-              onChange={() => dispatch({ type: "TOGGLE_MATERIALES" })}
-              className="h-4 w-4 rounded border-gray-300 accent-brand-500"
+          </div>
+
+          {/* Período */}
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Periodo
+            </label>
+            <select
+              value={state.periodId}
+              onChange={(e) => dispatch({ type: "SET_PERIOD", value: e.target.value })}
+              className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors
+                ${state.periodId ? "border-brand-400 bg-brand-50 text-brand-800 font-medium" : "border-gray-300"}`}
+            >
+              <option value="">Todos</option>
+              {filters.periodos.map((p) => (
+                <option key={p.id} value={p.id}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tipo Destino */}
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Tipo / Modelo
+            </label>
+            <select
+              value={state.tipoDestino}
+              onChange={(e) => dispatch({ type: "SET_TIPO", value: e.target.value })}
+              className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors
+                ${state.tipoDestino ? "border-brand-400 bg-brand-50 text-brand-800 font-medium" : "border-gray-300"}`}
+            >
+              <option value="">Todos</option>
+              {filters.tiposDestino.map((t) => (
+                <option key={t.value} value={t.value}>{t.value} ({t.count})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Subdestino */}
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Subdestino
+            </label>
+            <select
+              value={state.subdestino}
+              onChange={(e) => dispatch({ type: "SET_SUBDESTINO", value: e.target.value })}
+              className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors
+                ${state.subdestino ? "border-brand-400 bg-brand-50 text-brand-800 font-medium" : "border-gray-300"}`}
+            >
+              <option value="">Todos</option>
+              {filters.subdestinos.map((s, idx) => (
+                <option key={`sub-${idx}`} value={s.value}>{s.value} ({s.count})</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Unidad de Costo */}
+          <div className="lg:col-span-2">
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Unidad de Costo
+            </label>
+            <MultiSelectDropdown
+              options={filters.unidadesCosto}
+              selected={state.unidadCosto}
+              onChange={(v) => dispatch({ type: "SET_UC", value: v })}
+              allLabel="Todas las unidades"
             />
-            Solo materiales principales
-          </label>
+          </div>
+
+          {/* Fecha desde */}
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Fecha desde
+            </label>
+            <input
+              type="date"
+              value={state.fechaDesde}
+              onChange={(e) => dispatch({ type: "SET_FECHA_DESDE", value: e.target.value })}
+              className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors
+                ${state.fechaDesde ? "border-brand-400 bg-brand-50 text-brand-800" : "border-gray-300"}`}
+            />
+          </div>
+
+          {/* Fecha hasta */}
+          <div>
+            <label className="mb-1 block text-[10px] font-bold uppercase tracking-wider text-gray-400">
+              Fecha hasta
+            </label>
+            <input
+              type="date"
+              value={state.fechaHasta}
+              onChange={(e) => dispatch({ type: "SET_FECHA_HASTA", value: e.target.value })}
+              className={`w-full rounded-lg border px-3 py-2 text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 focus:outline-none transition-colors
+                ${state.fechaHasta ? "border-brand-400 bg-brand-50 text-brand-800" : "border-gray-300"}`}
+            />
+          </div>
+
+          {/* Toggles */}
+          <div className="flex items-end gap-4 lg:col-span-2">
+            <label className={`flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-lg border transition-colors
+              ${state.soloConMod ? "border-brand-300 bg-brand-50 text-brand-700" : "border-transparent text-gray-600 hover:bg-gray-50"}`}
+            >
+              <input
+                type="checkbox"
+                checked={state.soloConMod}
+                onChange={() => dispatch({ type: "TOGGLE_MOD" })}
+                className="h-4 w-4 rounded border-gray-300 accent-brand-500"
+              />
+              Solo con MOD
+            </label>
+            <label className={`flex items-center gap-2 text-sm cursor-pointer px-3 py-2 rounded-lg border transition-colors
+              ${state.soloMaterialesPrincipales ? "border-brand-300 bg-brand-50 text-brand-700" : "border-transparent text-gray-600 hover:bg-gray-50"}`}
+            >
+              <input
+                type="checkbox"
+                checked={state.soloMaterialesPrincipales}
+                onChange={() => dispatch({ type: "TOGGLE_MATERIALES" })}
+                className="h-4 w-4 rounded border-gray-300 accent-brand-500"
+              />
+              Solo mat. principales
+            </label>
+          </div>
         </div>
       </div>
     </div>

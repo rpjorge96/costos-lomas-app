@@ -72,6 +72,38 @@ function buildParams(state: FilterState): URLSearchParams {
   return params;
 }
 
+// ─── Skeleton Loader ───
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-4 animate-pulse">
+      {/* Banner skeleton */}
+      <div className="h-16 rounded-xl bg-gray-200" />
+      {/* KPI row 1 */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-7">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="h-20 rounded-xl bg-gray-100" />
+        ))}
+      </div>
+      {/* KPI row 2 */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-16 rounded-xl bg-gray-100" />
+        ))}
+      </div>
+      {/* Chart skeleton */}
+      <div className="h-64 rounded-xl bg-gray-100" />
+      {/* Table skeleton */}
+      <div className="rounded-xl bg-gray-100 overflow-hidden">
+        <div className="h-10 bg-gray-200" />
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-9 border-t border-gray-200 bg-gray-50" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Dashboard ───
 
 export function CostosDestinoDashboard() {
@@ -153,18 +185,17 @@ export function CostosDestinoDashboard() {
   if (error) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Costos Detallados por Destino
-          </h1>
-        </div>
+        <PageHeader />
         <div className="rounded-xl border border-red-200 bg-red-50 p-8 text-center">
-          <p className="text-lg font-medium text-red-700">
-            Error al conectar con la base de datos
-          </p>
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
+            <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+          </div>
+          <p className="text-lg font-semibold text-red-700">Error al conectar con la base de datos</p>
           <p className="mt-2 text-sm text-red-500">{error}</p>
           <p className="mt-4 text-xs text-red-400">
-            Verifica que PostgreSQL est&eacute; corriendo y la variable DATABASE_URL est&eacute; configurada
+            Verifica que PostgreSQL esté corriendo y la variable DATABASE_URL esté configurada
           </p>
         </div>
       </div>
@@ -174,44 +205,44 @@ export function CostosDestinoDashboard() {
   if (!filters) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-9 w-9 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
+          <p className="text-sm text-gray-400">Cargando filtros…</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Costos Detallados por Destino
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Ficha anal&iacute;tica de costo para un destino espec&iacute;fico
-        </p>
-      </div>
+      <PageHeader />
 
       {/* Filters */}
       <FilterPanel filters={filters} state={state} dispatch={dispatch} />
 
       {/* No destino selected */}
       {!state.destino && (
-        <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
-          <p className="text-lg font-medium text-gray-400">
-            Selecciona un destino para ver el an&aacute;lisis
+        <div className="rounded-xl border-2 border-dashed border-gray-200 bg-white p-14 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50">
+            <svg className="h-7 w-7 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+            </svg>
+          </div>
+          <p className="text-base font-semibold text-gray-500">Selecciona un destino para comenzar</p>
+          <p className="mt-1.5 text-sm text-gray-400">
+            Usa el filtro de <span className="font-medium text-brand-500">Destino</span> para ver el análisis de costos
           </p>
-          <p className="mt-1 text-sm text-gray-300">
-            Usa el filtro de arriba para elegir un destino
-          </p>
+          <div className="mt-4 flex justify-center">
+            <svg className="h-5 w-5 text-brand-300 -rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 10.5L12 3m0 0l7.5 7.5M12 3v18" />
+            </svg>
+          </div>
         </div>
       )}
 
-      {/* Loading */}
-      {loading && (
-        <div className="flex h-40 items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
-        </div>
-      )}
+      {/* Skeleton Loader */}
+      {loading && <DashboardSkeleton />}
 
       {/* Dashboard content */}
       {data && !loading && state.destino && (
@@ -238,9 +269,14 @@ export function CostosDestinoDashboard() {
           {!showActividades ? (
             <button
               onClick={() => setShowActividades(true)}
-              className="w-full rounded-xl border border-dashed border-gray-300 bg-white py-6 text-sm font-medium text-gray-500 hover:border-brand-500 hover:text-brand-600 transition-colors"
+              className="group w-full rounded-xl border-2 border-dashed border-gray-200 bg-white py-5 transition-all duration-200 hover:border-brand-400 hover:bg-brand-50"
             >
-              Cargar Actividades y An&aacute;lisis de MOD
+              <div className="flex items-center justify-center gap-2.5 text-sm font-medium text-gray-400 group-hover:text-brand-600 transition-colors">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Cargar Actividades y Análisis de MOD
+              </div>
             </button>
           ) : (
             <ActividadesModSection
@@ -253,15 +289,40 @@ export function CostosDestinoDashboard() {
           {!showMateriales ? (
             <button
               onClick={() => setShowMateriales(true)}
-              className="w-full rounded-xl border border-dashed border-gray-300 bg-white py-6 text-sm font-medium text-gray-500 hover:border-brand-500 hover:text-brand-600 transition-colors"
+              className="group w-full rounded-xl border-2 border-dashed border-gray-200 bg-white py-5 transition-all duration-200 hover:border-brand-400 hover:bg-brand-50"
             >
-              Cargar Materiales Principales y Matriz
+              <div className="flex items-center justify-center gap-2.5 text-sm font-medium text-gray-400 group-hover:text-brand-600 transition-colors">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+                Cargar Materiales Principales y Matriz
+              </div>
             </button>
           ) : (
             <MaterialesSection data={matData} />
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function PageHeader() {
+  return (
+    <div className="flex items-start gap-4">
+      <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-600 shadow-sm">
+        <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        </svg>
+      </div>
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900 leading-tight">
+          Costos Detallados por Destino
+        </h1>
+        <p className="mt-0.5 text-sm text-gray-500">
+          Ficha analítica de costo para un destino específico
+        </p>
+      </div>
     </div>
   );
 }
