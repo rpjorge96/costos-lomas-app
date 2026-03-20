@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
-import { TABLE_CONFIGS, TABLE_KEYS } from "@/lib/table-config";
+import { SidebarNav } from "./sidebar-nav";
 
 export const metadata: Metadata = {
   title: "Costos Lomas",
@@ -11,53 +11,36 @@ export const metadata: Metadata = {
 function Sidebar() {
   return (
     <aside className="fixed top-0 left-0 h-full w-60 bg-brand-900 text-white flex flex-col z-10">
+      {/* Logo / Home */}
       <Link
         href="/"
-        className="px-5 py-5 border-b border-brand-700 hover:bg-brand-800 transition-colors"
+        className="px-5 py-4 border-b border-brand-700/60 hover:bg-brand-800/50 transition-colors group"
       >
-        <h1 className="text-lg font-bold tracking-tight">Costos Lomas</h1>
-        <p className="text-xs text-brand-100/70 mt-0.5">Consolidación de datos</p>
+        <div className="flex items-center gap-2.5">
+          <div className="h-7 w-7 rounded-lg bg-accent-500 flex items-center justify-center shrink-0 shadow-sm">
+            <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-sm font-bold tracking-tight text-white leading-tight">Costos Lomas</h1>
+            <p className="text-[10px] text-brand-100/50 leading-tight">Consolidación de datos</p>
+          </div>
+        </div>
       </Link>
 
-      <nav className="flex-1 overflow-y-auto py-3">
-        <p className="px-5 py-2 text-[10px] font-semibold uppercase tracking-widest text-brand-100/40">
-          Dashboards
-        </p>
-        <Link
-          href="/dashboard/comparativo-unidad-costo"
-          className="flex items-center gap-2.5 px-5 py-2.5 text-sm text-brand-100/90 hover:bg-brand-800 hover:text-white transition-colors"
-        >
-          <span className="text-base">📊</span>
-          <span className="truncate">Comparativo Unidad Costo</span>
-        </Link>
-        <Link
-          href="/dashboard/costos-destino"
-          className="flex items-center gap-2.5 px-5 py-2.5 text-sm text-brand-100/90 hover:bg-brand-800 hover:text-white transition-colors"
-        >
-          <span className="text-base">🏠</span>
-          <span className="truncate">Costos por Destino</span>
-        </Link>
+      {/* Navigation */}
+      <SidebarNav />
 
-        <p className="px-5 py-2 mt-2 text-[10px] font-semibold uppercase tracking-widest text-brand-100/40">
-          Tablas
-        </p>
-        {TABLE_KEYS.map((key) => {
-          const t = TABLE_CONFIGS[key];
-          return (
-            <Link
-              key={key}
-              href={`/tabla/${key}`}
-              className="flex items-center gap-2.5 px-5 py-2.5 text-sm text-brand-100/90 hover:bg-brand-800 hover:text-white transition-colors"
-            >
-              <span className="text-base">{t.icon}</span>
-              <span className="truncate">{t.name}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="px-5 py-3 border-t border-brand-700 text-[10px] text-brand-100/30">
-        4 períodos · 74,609 registros
+      {/* Footer */}
+      <div className="px-5 py-3 border-t border-brand-700/60">
+        <div className="flex items-center gap-2">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent-400 opacity-60" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-accent-500" />
+          </span>
+          <span className="text-[10px] text-brand-100/40">4 períodos · 74,609 registros</span>
+        </div>
       </div>
     </aside>
   );
