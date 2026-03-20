@@ -1,11 +1,29 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #f0fdf4;
-  --color-brand-100: #dcfce7;
-  --color-brand-500: #22c55e;
-  --color-brand-600: #16a34a;
-  --color-brand-700: #15803d;
-  --color-brand-800: #166534;
-  --color-brand-900: #14532d;
+  /* Verde GLM — color primario de marca (#2D5219) */
+  --color-brand-50:  #f6faf4;
+  --color-brand-100: #ebf5e6;
+  --color-brand-200: #d1e9c4;
+  --color-brand-300: #aeda95;
+  --color-brand-400: #81c959;
+  --color-brand-500: #5ba432;
+  --color-brand-600: #478128;
+  --color-brand-700: #3a6920;
+  --color-brand-800: #325a1c;
+  --color-brand-900: #2d5219;
+  --color-brand-950: #1c330f;
+
+  /* Naranja GLM — color de acento (#E8632A) */
+  --color-accent-50:  #fef5f1;
+  --color-accent-100: #fce7de;
+  --color-accent-200: #f9ccb8;
+  --color-accent-300: #f5a684;
+  --color-accent-400: #ef8152;
+  --color-accent-500: #e8632a;
+  --color-accent-600: #c84a14;
+  --color-accent-700: #9b380d;
+  --color-accent-800: #712809;
+  --color-accent-900: #511c06;
+  --color-accent-950: #301103;
 }

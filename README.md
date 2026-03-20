@@ -1,6 +1,6 @@
 # Costos Lomas APP
 
-Sistema de consolidacion y analisis de costos de construccion para **Lomas de San Angel**. Sincroniza datos desde multiples bases de Airtable hacia una base de datos PostgreSQL local y presenta dashboards analiticos interactivos para la toma de decisiones.
+Sistema de consolidacion y analisis de costos de construccion para **Paseo Las Lomas de Salama**. Sincroniza datos desde multiples bases de Airtable hacia una base de datos PostgreSQL local y presenta dashboards analiticos interactivos para la toma de decisiones.
 
 ## Tech Stack
 
