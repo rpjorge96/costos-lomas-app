@@ -9,7 +9,6 @@ interface PeriodRow {
   label: string;
   name: string;
   last_synced_at: string | null;
-  record_counts: Record<string, number> | null;
 }
 
 interface TableCount {
@@ -17,10 +16,38 @@ interface TableCount {
   count: string;
 }
 
+interface PeriodTableCount {
+  period_id: string;
+  table_key: string;
+  count: string;
+}
+
 export default async function Home() {
   const allPeriods = await pool.query<PeriodRow>(
-    "SELECT id, label, name, last_synced_at, record_counts FROM periods ORDER BY id"
+    "SELECT id, label, name, last_synced_at FROM periods ORDER BY id"
   );
+
+  const lastSyncResult = await pool.query<{ last_sync: string | null }>(
+    "SELECT MAX(last_synced_at)::text AS last_sync FROM periods"
+  );
+  const lastSync = lastSyncResult.rows[0]?.last_sync ?? null;
+
+  const periodTableCounts = await pool.query<PeriodTableCount>(`
+    SELECT period_id, 'actividades' as table_key, COUNT(*)::text as count FROM actividades GROUP BY period_id
+    UNION ALL SELECT period_id, 'destinos', COUNT(*)::text FROM destinos GROUP BY period_id
+    UNION ALL SELECT period_id, 'materiales', COUNT(*)::text FROM materiales GROUP BY period_id
+    UNION ALL SELECT period_id, 'salidaMateriales', COUNT(*)::text FROM salida_materiales GROUP BY period_id
+    UNION ALL SELECT period_id, 'combustibles', COUNT(*)::text FROM combustibles GROUP BY period_id
+    UNION ALL SELECT period_id, 'despachosCombustible', COUNT(*)::text FROM despachos_combustible GROUP BY period_id
+    UNION ALL SELECT period_id, 'usoMaquinaria', COUNT(*)::text FROM uso_maquinaria GROUP BY period_id
+  `);
+
+  // Map: periodId → { tableKey → count }
+  const periodCountMap: Record<string, Record<string, number>> = {};
+  for (const row of periodTableCounts.rows) {
+    if (!periodCountMap[row.period_id]) periodCountMap[row.period_id] = {};
+    periodCountMap[row.period_id][row.table_key] = parseInt(row.count);
+  }
 
   const tableCounts = await pool.query<TableCount>(`
     SELECT 'actividades' as table_name, COUNT(*)::text as count FROM actividades
@@ -68,7 +95,7 @@ export default async function Home() {
         />
         <SummaryCard
           label="Último Sync"
-          value={formatSyncDate(allPeriods.rows[0]?.last_synced_at)}
+          value={formatSyncDate(lastSync)}
           accent="bg-purple-500"
         />
       </div>
@@ -77,7 +104,7 @@ export default async function Home() {
       <h2 className="text-lg font-semibold text-gray-800 mb-4">Períodos</h2>
       <div className="grid grid-cols-2 gap-4 mb-10">
         {allPeriods.rows.map((p) => (
-          <PeriodCard key={p.id} period={p} />
+          <PeriodCard key={p.id} period={p} counts={periodCountMap[p.id] ?? {}} />
         ))}
       </div>
 
@@ -132,9 +159,8 @@ function SummaryCard({
   );
 }
 
-function PeriodCard({ period }: { period: PeriodRow }) {
-  const counts = period.record_counts ?? {};
-  const total = Object.values(counts).reduce((a, b) => a + (b > 0 ? b : 0), 0);
+function PeriodCard({ period, counts }: { period: PeriodRow; counts: Record<string, number> }) {
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -166,7 +192,7 @@ function formatSyncDate(dateStr: string | null | undefined): string {
   if (!dateStr) return "—";
   try {
     const d = new Date(dateStr);
-    return d.toLocaleDateString("es-GT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+    return d.toLocaleString("es-GT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
   } catch {
     return "—";
   }
