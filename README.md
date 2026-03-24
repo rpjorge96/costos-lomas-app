@@ -9,7 +9,7 @@ Sistema de consolidacion y analisis de costos de construccion para **Paseo Las L
 | Framework | Next.js (App Router, Turbopack) | 16.1 |
 | UI | React | 19.2 |
 | Lenguaje | TypeScript | 5.9 |
-| Base de datos | PostgreSQL (Docker / WSL) | 16-alpine |
+| Base de datos | PostgreSQL (WSL2) | 16 |
 | ORM | Drizzle ORM + drizzle-kit | latest |
 | Visualizacion | Recharts | 3.8 |
 | Estilos | Tailwind CSS | v4 |
@@ -116,7 +116,6 @@ AIRTABLE_PAT=pat...tu_token_aqui
 
 | Archivo | Descripcion |
 |---------|-------------|
-| `docker-compose.yml` | Define el servicio `db` con `postgres:16-alpine`, volume `pgdata` persistente |
 | `src/db/index.ts` | Crea el pool `pg.Pool` desde `DATABASE_URL` y exporta `db` (Drizzle) + `pool` (raw SQL) |
 | `src/db/schema.ts` | Schema Drizzle con 8 tablas: `periods`, `destinos`, `actividades`, `materiales`, `salida_materiales`, `combustibles`, `despachos_combustible`, `uso_maquinaria` |
 | `drizzle.config.ts` | Config de drizzle-kit apuntando a `src/db/schema.ts` y `DATABASE_URL` |
@@ -136,37 +135,31 @@ AIRTABLE_PAT=pat...tu_token_aqui
 
 Cada tabla tiene un indice unico compuesto `(period_id, airtable_id)` para upserts.
 
-### Dos opciones para correr PostgreSQL
+### Correr PostgreSQL via WSL
 
-**Opcion A: Docker Compose (recomendado)**
+PostgreSQL corre directamente en WSL2 (Ubuntu). Los datos persisten en el filesystem de WSL.
+
+**Iniciar PostgreSQL** (cada vez que se reinicia WSL o Windows):
 ```bash
-docker compose up -d
-```
-Los datos persisten en el volume `pgdata`. Para destruir y recrear:
-```bash
-docker compose down -v   # elimina el volume
-docker compose up -d     # crea DB limpia
-npm run db:push          # recrea schema
-npm run sync             # re-sincroniza datos
+wsl -u root service postgresql start
 ```
 
-**Opcion B: PostgreSQL en WSL**
-Si Docker no esta disponible, se puede instalar PostgreSQL directamente en WSL:
-```bash
-# En WSL (Ubuntu):
-sudo apt install postgresql postgresql-contrib
-sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';"
-sudo -u postgres createdb costos_lomas
-sudo sed -i 's/peer/md5/g' /etc/postgresql/*/main/pg_hba.conf
-sudo service postgresql restart
-```
-
-El script `start-postgres.cmd` inicia PostgreSQL via WSL automaticamente:
+O usando el script incluido:
 ```cmd
 start-postgres.cmd
 ```
 
-Para que PostgreSQL inicie automaticamente con Windows, agregar `start-postgres.cmd` al Task Scheduler o a la carpeta de Startup.
+Para que PostgreSQL inicie automaticamente con Windows, agregar `start-postgres.cmd` al Task Scheduler o a la carpeta de Startup (`shell:startup`).
+
+**Instalacion inicial** (una sola vez, en terminal WSL):
+```bash
+sudo apt update && sudo apt install -y postgresql postgresql-contrib
+sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'postgres';"
+sudo -u postgres psql -c "CREATE DATABASE costos_lomas OWNER postgres;"
+sudo sed -i "s/host    all             all             127.0.0.1\/32            scram-sha-256/host    all             all             127.0.0.1\/32            md5/" /etc/postgresql/16/main/pg_hba.conf
+sudo sed -i "s/host    all             all             ::1\/128                 scram-sha-256/host    all             all             ::1\/128                 md5/" /etc/postgresql/16/main/pg_hba.conf
+sudo service postgresql restart
+```
 
 ---
 
@@ -298,7 +291,7 @@ Todos los endpoints usan raw SQL via `pool.query()` para queries complejas con J
 ## Requisitos del Sistema
 
 - **Node.js** >= 20
-- **Docker Desktop** (para PostgreSQL via container) o **WSL con PostgreSQL** instalado
+- **WSL2** con Ubuntu y PostgreSQL 16 instalado
 - **Airtable Personal Access Token** con acceso a las 4 bases de datos
 - **Windows 10/11** (los scripts `.cmd` son para Windows; en Linux/Mac usar equivalentes bash)
 
@@ -321,13 +314,8 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/costos_lomas
 AIRTABLE_PAT=patXXXXXXXXXXXXXX.XXXXXXXXXXXXXXXXXXXXXXXX
 EOF
 
-# 4. Iniciar PostgreSQL (elegir una opcion)
-
-## Opcion A: Docker
-docker compose up -d
-
-## Opcion B: WSL (si Docker no esta disponible)
-wsl -d Ubuntu -u root -- bash -c "service postgresql start"
+# 4. Iniciar PostgreSQL via WSL
+wsl -u root service postgresql start
 
 # 5. Crear las tablas en la base de datos
 npm run db:push
@@ -371,7 +359,7 @@ La aplicacion estara disponible en **http://localhost:3000**
 ## Troubleshooting
 
 ### La base de datos no conecta
-1. Verificar que PostgreSQL esta corriendo: `docker ps` o `wsl -d Ubuntu -u root -- bash -c "service postgresql status"`
+1. Verificar que PostgreSQL esta corriendo: `wsl -u root service postgresql status`
 2. Verificar `.env.local` existe y tiene `DATABASE_URL` correcto
 3. Verificar que el port 5432 no esta en uso por otro proceso
 
@@ -380,9 +368,10 @@ La aplicacion estara disponible en **http://localhost:3000**
 2. Verificar que el token tiene permisos de lectura sobre las bases
 3. Si falla un campo especifico, el sistema lo skipea automaticamente y continua
 
-### Docker Desktop no inicia
+### PostgreSQL no inicia en WSL
 1. Verificar que WSL2 esta actualizado: `wsl --update`
-2. Si WSL2 no funciona, instalar PostgreSQL directamente en WSL (ver seccion Base de Datos)
+2. Intentar iniciar manualmente: `wsl -u root service postgresql start`
+3. Ver logs: `wsl -u root bash -c "tail -20 /var/log/postgresql/postgresql-16-main.log"`
 
 ### Error "relation does not exist"
 Ejecutar `npm run db:push` para crear las tablas.
