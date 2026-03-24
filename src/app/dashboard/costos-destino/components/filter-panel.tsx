@@ -121,8 +121,8 @@ function MultiSelectDropdown({
   allLabel = "Todas",
 }: {
   options: FilterOption[];
-  selected: string[];
-  onChange: (next: string[]) => void;
+  selected: string[] | null;
+  onChange: (next: string[] | null) => void;
   allLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -137,24 +137,29 @@ function MultiSelectDropdown({
     return () => document.removeEventListener("mousedown", onOutside);
   }, []);
 
-  const isAll = selected.length === 0;
+  // null = todas, [] = ninguna, [items] = selección específica
+  const isAll = selected === null;
   const filtered = options.filter((o) =>
     o.value.toLowerCase().includes(search.toLowerCase())
   );
 
   function toggle(value: string) {
     if (isAll) {
+      // En modo "todas", desmarcar una → todas excepto esa
       onChange(options.map((o) => o.value).filter((v) => v !== value));
     } else if (selected.includes(value)) {
+      // Desmarcar item existente
       onChange(selected.filter((v) => v !== value));
     } else {
+      // Marcar nuevo item; si quedan todas marcadas → volver a "todas"
       const next = [...selected, value];
-      onChange(next.length === options.length ? [] : next);
+      onChange(next.length === options.length ? null : next);
     }
   }
 
   let label: string;
   if (isAll) label = allLabel;
+  else if (selected.length === 0) label = "Ninguna";
   else if (selected.length === 1) label = selected[0];
   else label = `${selected.length} seleccionadas`;
 
@@ -196,23 +201,19 @@ function MultiSelectDropdown({
           <div className="flex gap-2 border-b border-gray-100 px-3 py-1.5 text-xs">
             <button
               type="button"
-              onClick={() => onChange([])}
-              className="text-brand-500 font-medium hover:underline"
+              onClick={() => onChange(null)}
+              className={`font-medium hover:underline ${isAll ? "text-brand-500" : "text-gray-400"}`}
             >
               Todas
             </button>
-            {!isAll && (
-              <>
-                <span className="text-gray-300">·</span>
-                <button
-                  type="button"
-                  onClick={() => onChange([])}
-                  className="text-red-400 hover:underline"
-                >
-                  Limpiar
-                </button>
-              </>
-            )}
+            <span className="text-gray-300">·</span>
+            <button
+              type="button"
+              onClick={() => onChange([])}
+              className={`font-medium hover:underline ${!isAll && selected.length === 0 ? "text-brand-500" : "text-gray-400"}`}
+            >
+              Ninguna
+            </button>
           </div>
           <div className="max-h-72 overflow-y-auto py-1">
             {filtered.map((o) => (
@@ -236,7 +237,7 @@ function MultiSelectDropdown({
           <div className="border-t border-gray-100 px-3 py-1.5 text-[11px] text-gray-400">
             {isAll
               ? `${options.length} unidades (todas)`
-              : `${selected.length} de ${options.length}`}
+              : `${selected.length} de ${options.length} seleccionadas`}
           </div>
         </div>
       )}
@@ -262,7 +263,7 @@ export function FilterPanel({ filters, state, dispatch }: FilterPanelProps) {
     state.fechaHasta,
     state.soloConMod,
     state.soloMaterialesPrincipales,
-    state.unidadCosto.length > 0,
+    state.unidadCosto !== null,
   ].filter(Boolean).length;
 
   const hasAnyFilter = !!state.destino || activeCount > 0;
@@ -278,7 +279,7 @@ export function FilterPanel({ filters, state, dispatch }: FilterPanelProps) {
   }));
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
       {/* Panel header */}
       <div className="flex items-center justify-between gap-4 px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
         <div className="flex items-center gap-2">
