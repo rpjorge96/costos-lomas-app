@@ -24,7 +24,7 @@ const initialFilter: FilterState = {
   periodId: "",
   destino: "",
   tipoDestino: "",
-  unidadCosto: [],
+  unidadCosto: null,
   subdestino: "",
   fechaDesde: "",
   fechaHasta: "",
@@ -64,7 +64,7 @@ function filterReducer(state: FilterState, action: FilterAction): FilterState {
 function buildParams(state: FilterState): URLSearchParams {
   const params = new URLSearchParams({ destino: state.destino });
   if (state.periodId) params.set("periodId", state.periodId);
-  if (state.unidadCosto.length > 0)
+  if (state.unidadCosto !== null && state.unidadCosto.length > 0)
     params.set("unidadCosto", state.unidadCosto.join("||"));
   if (state.subdestino) params.set("subdestino", state.subdestino);
   if (state.fechaDesde) params.set("fechaDesde", state.fechaDesde);

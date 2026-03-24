@@ -32,7 +32,7 @@ export interface FilterState {
   periodId: string;
   destino: string;
   tipoDestino: string;
-  unidadCosto: string[];
+  unidadCosto: string[] | null;
   subdestino: string;
   fechaDesde: string;
   fechaHasta: string;
@@ -44,7 +44,7 @@ export type FilterAction =
   | { type: "SET_PERIOD"; value: string }
   | { type: "SET_DESTINO"; value: string }
   | { type: "SET_TIPO"; value: string }
-  | { type: "SET_UC"; value: string[] }
+  | { type: "SET_UC"; value: string[] | null }
   | { type: "SET_SUBDESTINO"; value: string }
   | { type: "SET_FECHA_DESDE"; value: string }
   | { type: "SET_FECHA_HASTA"; value: string }

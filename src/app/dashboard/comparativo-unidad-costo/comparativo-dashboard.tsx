@@ -103,8 +103,8 @@ function shortDestino(d: string, maxLen = 22): string {
 // ─── Multi-Select Dropdown ───
 interface MultiSelectProps {
   options: FilterOption[];
-  selected: string[];
-  onChange: (next: string[]) => void;
+  selected: string[] | null;
+  onChange: (next: string[] | null) => void;
   placeholder?: string;
   allLabel?: string;
 }
@@ -122,46 +122,47 @@ function MultiSelectDropdown({ options, selected, onChange, allLabel = "Todas" }
     return () => document.removeEventListener("mousedown", onOutside);
   }, []);
 
-  // empty selected = "all"
-  const isAll = selected.length === 0;
+  // null = todas, [] = ninguna, [items] = selección específica
+  const isAll = selected === null;
   const filtered = options.filter((o) =>
     o.value.toLowerCase().includes(search.toLowerCase())
   );
 
   function toggle(value: string) {
     if (isAll) {
-      // deselect everything except this one
+      // En modo "todas", desmarcar una → todas excepto esa
       onChange(options.map((o) => o.value).filter((v) => v !== value));
     } else if (selected.includes(value)) {
-      const next = selected.filter((v) => v !== value);
-      onChange(next); // [] means "all" again
+      onChange(selected.filter((v) => v !== value));
     } else {
       const next = [...selected, value];
-      onChange(next.length === options.length ? [] : next);
+      onChange(next.length === options.length ? null : next);
     }
   }
 
-  function selectAll() { onChange([]); }
+  function selectAll() { onChange(null); }
+  function selectNone() { onChange([]); }
 
   function toggleFiltered() {
     const fvals = filtered.map((o) => o.value);
-    const allFSelected = fvals.every((v) => isAll || selected.includes(v));
+    const allFSelected = fvals.every((v) => isAll || selected!.includes(v));
     if (allFSelected) {
-      // deselect filtered — keep only non-filtered that were selected
+      // deselect filtered — keep only non-filtered
       const keep = isAll
         ? options.map((o) => o.value).filter((v) => !fvals.includes(v))
-        : selected.filter((v) => !fvals.includes(v));
-      onChange(keep);
+        : selected!.filter((v) => !fvals.includes(v));
+      onChange(keep.length === options.length ? null : keep);
     } else {
-      const merged = isAll
-        ? [] // was all, stays all
-        : [...new Set([...selected, ...fvals])];
-      onChange(merged.length === options.length ? [] : merged);
+      // select all filtered items merged with current
+      const base = isAll ? options.map((o) => o.value) : selected!;
+      const merged = [...new Set([...base, ...fvals])];
+      onChange(merged.length === options.length ? null : merged);
     }
   }
 
   let label: string;
   if (isAll) label = allLabel;
+  else if (selected.length === 0) label = "Ninguna";
   else if (selected.length === 1) label = selected[0];
   else label = `${selected.length} seleccionadas`;
 
@@ -195,21 +196,17 @@ function MultiSelectDropdown({ options, selected, onChange, allLabel = "Todas" }
 
           {/* Quick actions */}
           <div className="flex gap-2 border-b border-gray-100 px-3 py-1.5 text-xs">
-            <button type="button" onClick={selectAll} className="text-brand-500 font-medium hover:underline">
+            <button type="button" onClick={selectAll} className={`font-medium hover:underline ${isAll ? "text-brand-500" : "text-gray-400"}`}>
               Todas
             </button>
             <span className="text-gray-300">·</span>
-            <button type="button" onClick={toggleFiltered} className="text-gray-500 hover:underline">
-              {filtered.every((o) => isAll || selected.includes(o.value)) ? "Deseleccionar visibles" : "Seleccionar visibles"}
+            <button type="button" onClick={selectNone} className={`font-medium hover:underline ${!isAll && selected!.length === 0 ? "text-brand-500" : "text-gray-400"}`}>
+              Ninguna
             </button>
-            {!isAll && (
-              <>
-                <span className="text-gray-300">·</span>
-                <button type="button" onClick={() => onChange(selected.slice(0, 1))} className="text-red-400 hover:underline">
-                  Limpiar
-                </button>
-              </>
-            )}
+            <span className="text-gray-300">·</span>
+            <button type="button" onClick={toggleFiltered} className="text-gray-500 hover:underline">
+              {filtered.every((o) => isAll || selected!.includes(o.value)) ? "Deseleccionar visibles" : "Seleccionar visibles"}
+            </button>
           </div>
 
           {/* Options */}
@@ -269,8 +266,8 @@ export function ComparativoDashboard() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Filter state — empty array = "all"
-  const [selectedUnidades, setSelectedUnidades] = useState<string[]>([]);
+  // Filter state — null = todas, [] = ninguna, [items] = selección específica
+  const [selectedUnidades, setSelectedUnidades] = useState<string[] | null>(null);
   const [periodId, setPeriodId] = useState("");
   const [tipoDestino, setTipoDestino] = useState("");
   const [limit, setLimit] = useState(30);
@@ -297,7 +294,7 @@ export function ComparativoDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     // empty = all; use "||" as separator (safe separator for these strings)
-    const unidadParam = selectedUnidades.length === 0 ? "all" : selectedUnidades.join("||");
+    const unidadParam = selectedUnidades === null ? "all" : selectedUnidades.join("||");
     const params = new URLSearchParams({ unidadCosto: unidadParam, limit: String(limit) });
     if (periodId) params.set("periodId", periodId);
     if (tipoDestino) params.set("tipoDestino", tipoDestino);
@@ -358,7 +355,7 @@ export function ComparativoDashboard() {
       </div>
 
       {/* ── Filters ── */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center gap-2 px-4 py-2.5 bg-gray-50/80 border-b border-gray-100">
           <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 3c2.755 0 5.455.232 8.083.678.533.09.917.556.917 1.096v1.044a2.25 2.25 0 01-.659 1.591l-5.432 5.432a2.25 2.25 0 00-.659 1.591v2.927a2.25 2.25 0 01-1.244 2.013L9.75 21v-6.568a2.25 2.25 0 00-.659-1.591L3.659 7.409A2.25 2.25 0 013 5.818V4.774c0-.54.384-1.006.917-1.096A48.32 48.32 0 0112 3z" />
