@@ -55,19 +55,27 @@ export async function GET(request: NextRequest) {
     );
 
     // ── Query B: UC principal for each material ──
+    // sm.num_actividad contains activity names (text), matched to a.actividad
     const ucPrincipalResult = await pool.query(
       `SELECT DISTINCT ON (sm.material_nombre)
          sm.material_nombre,
-         a.unidad_costo,
+         ua.unidad_costo,
          SUM(sm.costo_material::numeric) AS costo
        FROM salida_materiales sm
-       JOIN actividades a
-         ON sm.num_actividad = a.num_actividad::text
-         AND sm.period_id = a.period_id
-         AND sm.destino_subdestinos = a.destino_subdestinos
+       JOIN (
+         SELECT DISTINCT ON (TRIM(actividad), period_id, destino_subdestinos)
+           TRIM(actividad) AS actividad, period_id, destino_subdestinos, unidad_costo
+         FROM actividades
+         WHERE destino_subdestinos = $1
+           AND unidad_costo IS NOT NULL
+         ORDER BY TRIM(actividad), period_id, destino_subdestinos, costo_total DESC NULLS LAST
+       ) ua
+         ON TRIM(sm.num_actividad) = ua.actividad
+         AND sm.period_id = ua.period_id
+         AND sm.destino_subdestinos = ua.destino_subdestinos
        WHERE sm.destino_subdestinos = $1
          ${periodWhere}
-       GROUP BY sm.material_nombre, a.unidad_costo
+       GROUP BY sm.material_nombre, ua.unidad_costo
        ORDER BY sm.material_nombre, costo DESC`,
       params
     );
@@ -100,19 +108,26 @@ export async function GET(request: NextRequest) {
     const matrizResult = await pool.query(
       `SELECT
          sm.material_nombre,
-         a.unidad_costo,
+         ua.unidad_costo,
          COALESCE(SUM(sm.costo_material::numeric), 0) AS costo,
          COALESCE(SUM(sm.cantidad_enviada::numeric), 0) AS cantidad
        FROM salida_materiales sm
-       JOIN actividades a
-         ON sm.num_actividad = a.num_actividad::text
-         AND sm.period_id = a.period_id
-         AND sm.destino_subdestinos = a.destino_subdestinos
+       JOIN (
+         SELECT DISTINCT ON (TRIM(actividad), period_id, destino_subdestinos)
+           TRIM(actividad) AS actividad, period_id, destino_subdestinos, unidad_costo
+         FROM actividades
+         WHERE destino_subdestinos = $1
+           AND unidad_costo IS NOT NULL
+         ORDER BY TRIM(actividad), period_id, destino_subdestinos, costo_total DESC NULLS LAST
+       ) ua
+         ON TRIM(sm.num_actividad) = ua.actividad
+         AND sm.period_id = ua.period_id
+         AND sm.destino_subdestinos = ua.destino_subdestinos
        WHERE sm.destino_subdestinos = $1
          ${periodWhere}
          AND ${KEY_MAT_FILTER}
-       GROUP BY sm.material_nombre, a.unidad_costo
-       ORDER BY sm.material_nombre, a.unidad_costo`,
+       GROUP BY sm.material_nombre, ua.unidad_costo
+       ORDER BY sm.material_nombre, ua.unidad_costo`,
       params
     );
 
